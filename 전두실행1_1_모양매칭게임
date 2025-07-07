@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전두실행 1번 - 모양 매칭 게임</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 1000px;
+            width: 95%;
+        }
+        
+        .instruction {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #333;
+            padding: 15px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border-radius: 15px;
+        }
+        
+        .timer {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ff4757;
+            margin: 20px 0;
+        }
+        
+        .game-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 40px 0;
+            height: 300px;
+            gap: 20px;
+        }
+        
+        .side-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 200px;
+        }
+        
+        .center-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .card-queue {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            width: 120px;
+            height: 120px;
+            border: 3px solid #333;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card.active {
+            border-color: #4CAF50;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+        }
+        
+        .card.side-card {
+            cursor: pointer;
+        }
+        
+        .card.side-card:hover {
+            transform: scale(1.1);
+        }
+        
+        .card.center-card {
+            border-color: #FF6B6B;
+            background: #fff5f5;
+            cursor: default;
+        }
+        
+        .card.center-card:hover {
+            transform: none;
+        }
+        
+        .card.queue-card {
+            width: 80px;
+            height: 80px;
+            border-color: #ccc;
+            background: #f5f5f5;
+            cursor: default;
+        }
+        
+        .card.queue-card:hover {
+            transform: none;
+        }
+        
+        .shape {
+            transition: all 0.3s ease;
+        }
+        
+        .circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+        }
+        
+        .square {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .triangle {
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-bottom: 60px solid;
+        }
+        
+        .diamond {
+            width: 60px;
+            height: 60px;
+            transform: rotate(45deg);
+        }
+        
+        .star {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+        
+        .heart {
+            width: 60px;
+            height: 60px;
+            position: relative;
+            transform: rotate(-45deg);
+        }
+        
+        .heart:before,
+        .heart:after {
+            content: '';
+            width: 39px;
+            height: 60px;
+            position: absolute;
+            left: 30px;
+            transform: rotate(-45deg);
+            background: inherit;
+            border-radius: 30px 30px 0 0;
+            transform-origin: 0 100%;
+        }
+        
+        .heart:after {
+            left: 0;
+            transform: rotate(45deg);
+            transform-origin: 100% 100%;
+        }
+        
+        .queue-card .shape {
+            transform: scale(0.7);
+        }
+        
+        .queue-card .circle {
+            width: 42px;
+            height: 42px;
+        }
+        
+        .queue-card .square {
+            width: 42px;
+            height: 42px;
+        }
+        
+        .queue-card .triangle {
+            border-left: 21px solid transparent;
+            border-right: 21px solid transparent;
+            border-bottom: 42px solid;
+        }
+        
+        .queue-card .diamond {
+            width: 42px;
+            height: 42px;
+        }
+        
+        .queue-card .star {
+            width: 42px;
+            height: 42px;
+        }
+        
+        .queue-card .heart {
+            width: 42px;
+            height: 42px;
+        }
+        
+        .queue-card .heart:before,
+        .queue-card .heart:after {
+            width: 27px;
+            height: 42px;
+            left: 21px;
+            border-radius: 21px 21px 0 0;
+        }
+        
+        .queue-card .heart:after {
+            left: 0;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 30px 0;
+            font-size: 18px;
+        }
+        
+        .stat-item {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .feedback {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .feedback.correct {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .feedback.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .start-screen {
+            text-align: center;
+        }
+        
+        .start-button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 20px 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        .rules-explanation {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .queue-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div id="startScreen" class="start-screen">
+            <h1>전두실행 1번 - 모양 매칭 게임</h1>
+            <div class="rules-explanation">
+                <h3>게임 규칙:</h3>
+                <ul>
+                    <li>가운데 카드와 <strong>같은 모양</strong>인 카드를 좌우에서 찾아 클릭하세요</li>
+                    <li>색깔은 상관없이 <strong>모양만</strong> 같으면 됩니다</li>
+                    <li>좌우 카드는 게임 내내 고정되어 있습니다</li>
+                    <li>한 카드당 제한시간은 5초입니다</li>
+                    <li>총 20개의 카드를 진행합니다</li>
+                </ul>
+            </div>
+            <button class="start-button" onclick="startGame()">게임 시작</button>
+        </div>
+        
+        <div id="gameScreen" style="display: none;">
+            <div class="instruction">가운데 카드와 같은 모양인 카드를 눌러주세요</div>
+            <div class="timer">시간: <span id="timeLeft">5</span>초</div>
+            
+            <div class="game-area">
+                <div class="side-cards">
+                    <div id="leftCard1" class="card side-card" onclick="selectCard('left', 0)"></div>
+                    <div id="leftCard2" class="card side-card" onclick="selectCard('left', 1)"></div>
+                </div>
+                
+                <div class="center-area">
+                    <div class="queue-label">다음 카드들</div>
+                    <div class="card-queue">
+                        <div id="queueCard1" class="card queue-card"></div>
+                        <div id="queueCard2" class="card queue-card"></div>
+                        <div id="queueCard3" class="card queue-card"></div>
+                    </div>
+                    <div id="centerCard" class="card center-card"></div>
+                </div>
+                
+                <div class="side-cards">
+                    <div id="rightCard1" class="card side-card" onclick="selectCard('right', 0)"></div>
+                    <div id="rightCard2" class="card side-card" onclick="selectCard('right', 1)"></div>
+                </div>
+            </div>
+            
+            <div id="feedback" class="feedback" style="display: none;"></div>
+            
+            <div class="stats">
+                <div class="stat-item">점수: <span id="score">0</span></div>
+                <div class="stat-item">정답: <span id="correct">0</span></div>
+                <div class="stat-item">오답: <span id="incorrect">0</span></div>
+                <div class="stat-item">진행: <span id="current">1</span>/20</div>
+            </div>
+            
+            <button class="start-button" onclick="showStartScreen()">처음으로</button>
+        </div>
+    </div>
+    
+    <script>
+        let gameState = {
+            score: 0,
+            correct: 0,
+            incorrect: 0,
+            current: 1,
+            total: 20,
+            timer: null,
+            timeLeft: 5,
+            waitingForNext: false,
+            centerCards: [],
+            currentCenterIndex: 0,
+            leftCards: [],
+            rightCards: []
+        };
+        
+        const shapes = ['circle', 'square', 'triangle', 'diamond', 'star', 'heart'];
+        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#DDA0DD'];
+        
+        function showStartScreen() {
+            document.getElementById('startScreen').style.display = 'block';
+            document.getElementById('gameScreen').style.display = 'none';
+            resetGame();
+        }
+        
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            
+            initializeGame();
+            nextRound();
+        }
+        
+        function resetGame() {
+            gameState = {
+                score: 0,
+                correct: 0,
+                incorrect: 0,
+                current: 1,
+                total: 20,
+                timer: null,
+                timeLeft: 5,
+                waitingForNext: false,
+                centerCards: [],
+                currentCenterIndex: 0,
+                leftCards: [],
+                rightCards: []
+            };
+            updateStats();
+        }
+        
+        function initializeGame() {
+            // 좌우 카드 생성 (게임 내내 고정)
+            generateSideCards();
+            
+            // 가운데 카드 큐 생성
+            generateCenterCards();
+            
+            // 큐 표시
+            updateQueue();
+        }
+        
+        function generateSideCards() {
+            // 좌우 각각 2개씩 완전히 다른 카드 생성
+            const usedCombinations = new Set();
+            
+            gameState.leftCards = [];
+            gameState.rightCards = [];
+            
+            // 좌측 카드 2개
+            for (let i = 0; i < 2; i++) {
+                let combination;
+                do {
+                    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    combination = `${shape}-${color}`;
+                } while (usedCombinations.has(combination));
+                
+                usedCombinations.add(combination);
+                gameState.leftCards.push(combination);
+            }
+            
+            // 우측 카드 2개
+            for (let i = 0; i < 2; i++) {
+                let combination;
+                do {
+                    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    combination = `${shape}-${color}`;
+                } while (usedCombinations.has(combination));
+                
+                usedCombinations.add(combination);
+                gameState.rightCards.push(combination);
+            }
+            
+            // 좌우 카드 표시
+            displaySideCards();
+        }
+        
+        function generateCenterCards() {
+            gameState.centerCards = [];
+            const allSideShapes = [
+                ...gameState.leftCards.map(card => card.split('-')[0]),
+                ...gameState.rightCards.map(card => card.split('-')[0])
+            ];
+            
+            for (let i = 0; i < gameState.total; i++) {
+                let shape, color;
+                
+                if (Math.random() < 0.7) {
+                    // 70% 확률로 정답 있는 카드
+                    shape = allSideShapes[Math.floor(Math.random() * allSideShapes.length)];
+                } else {
+                    // 30% 확률로 정답 없는 카드
+                    do {
+                        shape = shapes[Math.floor(Math.random() * shapes.length)];
+                    } while (allSideShapes.includes(shape));
+                }
+                
+                color = colors[Math.floor(Math.random() * colors.length)];
+                gameState.centerCards.push(`${shape}-${color}`);
+            }
+        }
+        
+        function displaySideCards() {
+            // 좌측 카드들
+            gameState.leftCards.forEach((card, index) => {
+                const [shape, color] = card.split('-');
+                createShape(`leftCard${index + 1}`, shape, color);
+            });
+            
+            // 우측 카드들
+            gameState.rightCards.forEach((card, index) => {
+                const [shape, color] = card.split('-');
+                createShape(`rightCard${index + 1}`, shape, color);
+            });
+        }
+        
+        function updateQueue() {
+            const queueStart = gameState.currentCenterIndex;
+            
+            for (let i = 0; i < 3; i++) {
+                const cardIndex = queueStart + i;
+                const queueElement = document.getElementById(`queueCard${i + 1}`);
+                
+                if (cardIndex < gameState.centerCards.length) {
+                    const [shape, color] = gameState.centerCards[cardIndex].split('-');
+                    createShape(`queueCard${i + 1}`, shape, color);
+                    queueElement.style.visibility = 'visible';
+                } else {
+                    queueElement.style.visibility = 'hidden';
+                }
+            }
+        }
+        
+        function nextRound() {
+            if (gameState.current > gameState.total) {
+                endGame();
+                return;
+            }
+            
+            gameState.waitingForNext = false;
+            clearTimeout(gameState.timer);
+            
+            // 현재 카드 표시
+            const currentCard = gameState.centerCards[gameState.currentCenterIndex];
+            const [shape, color] = currentCard.split('-');
+            createShape('centerCard', shape, color);
+            
+            // 큐 업데이트
+            updateQueue();
+            
+            startTimer();
+            document.getElementById('feedback').style.display = 'none';
+            
+            // 모든 카드 선택 해제
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.remove('active');
+            });
+        }
+        
+        function createShape(elementId, shape, color) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="shape ${shape}"></div>`;
+            const shapeElement = element.querySelector('.shape');
+            shapeElement.style.backgroundColor = color;
+            
+            if (shape === 'triangle') {
+                shapeElement.style.backgroundColor = 'transparent';
+                shapeElement.style.borderBottomColor = color;
+            }
+        }
+        
+        function startTimer() {
+            gameState.timeLeft = 5;
+            document.getElementById('timeLeft').textContent = gameState.timeLeft;
+            
+            gameState.timer = setInterval(() => {
+                gameState.timeLeft--;
+                document.getElementById('timeLeft').textContent = gameState.timeLeft;
+                
+                if (gameState.timeLeft <= 0) {
+                    timeUp();
+                }
+            }, 1000);
+        }
+        
+        function selectCard(side, index) {
+            if (gameState.waitingForNext) return;
+            
+            clearTimeout(gameState.timer);
+            gameState.waitingForNext = true;
+            
+            const selectedCard = side === 'left' ? gameState.leftCards[index] : gameState.rightCards[index];
+            const [selectedShape] = selectedCard.split('-');
+            
+            const currentCard = gameState.centerCards[gameState.currentCenterIndex];
+            const [currentShape] = currentCard.split('-');
+            
+            const cardElement = document.getElementById(`${side}Card${index + 1}`);
+            cardElement.classList.add('active');
+            
+            if (selectedShape === currentShape) {
+                showFeedback('정답! 🎉', 'correct');
+                gameState.correct++;
+                gameState.score += 10;
+            } else {
+                const correctAnswers = findCorrectAnswers(currentShape);
+                let feedbackText = `오답! 선택한 카드는 ${getShapeKorean(selectedShape)}이고, 가운데 카드는 ${getShapeKorean(currentShape)}입니다.`;
+                
+                if (correctAnswers.length > 0) {
+                    feedbackText += ` 정답은 ${correctAnswers.join(', ')}입니다.`;
+                } else {
+                    feedbackText += ` 이 문제는 정답이 없는 카드였습니다.`;
+                }
+                
+                showFeedback(feedbackText, 'incorrect');
+                gameState.incorrect++;
+            }
+            
+            gameState.current++;
+            gameState.currentCenterIndex++;
+            updateStats();
+            
+            setTimeout(() => {
+                nextRound();
+            }, 2500);
+        }
+        
+        function timeUp() {
+            clearTimeout(gameState.timer);
+            gameState.waitingForNext = true;
+            
+            const currentCard = gameState.centerCards[gameState.currentCenterIndex];
+            const [currentShape] = currentCard.split('-');
+            const correctAnswers = findCorrectAnswers(currentShape);
+            
+            if (correctAnswers.length === 0) {
+                showFeedback('정답! 클릭하지 않는게 맞았어요 ✨', 'correct');
+                gameState.correct++;
+                gameState.score += 10;
+            } else {
+                showFeedback(`시간 초과! 정답은 ${correctAnswers.join(', ')}이었습니다. ⏰`, 'incorrect');
+                gameState.incorrect++;
+            }
+            
+            gameState.current++;
+            gameState.currentCenterIndex++;
+            updateStats();
+            
+            setTimeout(() => {
+                nextRound();
+            }, 2500);
+        }
+        
+        function findCorrectAnswers(targetShape) {
+            const correctAnswers = [];
+            
+            // 좌측 카드 확인
+            gameState.leftCards.forEach((card, index) => {
+                const [shape] = card.split('-');
+                if (shape === targetShape) {
+                    correctAnswers.push(`좌측 ${index + 1}번 카드`);
+                }
+            });
+            
+            // 우측 카드 확인
+            gameState.rightCards.forEach((card, index) => {
+                const [shape] = card.split('-');
+                if (shape === targetShape) {
+                    correctAnswers.push(`우측 ${index + 1}번 카드`);
+                }
+            });
+            
+            return correctAnswers;
+        }
+        
+        function getShapeKorean(shape) {
+            const shapeNames = {
+                'circle': '원',
+                'square': '사각형',
+                'triangle': '삼각형',
+                'diamond': '마름모',
+                'star': '별',
+                'heart': '하트'
+            };
+            return shapeNames[shape] || shape;
+        }
+        
+        function showFeedback(message, type) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = message;
+            feedback.className = `feedback ${type}`;
+            feedback.style.display = 'block';
+        }
+        
+        function updateStats() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('correct').textContent = gameState.correct;
+            document.getElementById('incorrect').textContent = gameState.incorrect;
+            document.getElementById('current').textContent = gameState.current;
+        }
+        
+        function endGame() {
+            const accuracy = Math.round((gameState.correct / gameState.total) * 100);
+            alert(`게임 종료!\n\n최종 점수: ${gameState.score}점\n정확도: ${accuracy}%\n정답: ${gameState.correct}개\n오답: ${gameState.incorrect}개`);
+            showStartScreen();
+        }
+    </script>
+</body>
+</html>
